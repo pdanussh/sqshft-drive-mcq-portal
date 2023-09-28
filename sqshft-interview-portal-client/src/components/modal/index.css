@@ -1,0 +1,27 @@
+.modal-visible {
+  display: block !important;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding-top: 10%
+}
+
+.backdrop {
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0);
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.header {
+  border-bottom: unset !important;
+}
+
+.footer {
+  border-top: unset !important;
+}
+
+.btn-primary, .btn-primary:hover, .btn-primary:active, .btn-primary:visited {
+    background-color: rgba(75, 132, 104, 0.8) !important;
+	border-color:rgba(75, 132, 104, 0.8) !important;
+}
