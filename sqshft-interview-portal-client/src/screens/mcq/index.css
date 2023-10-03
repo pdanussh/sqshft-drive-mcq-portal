@@ -10,7 +10,7 @@
 }
 
 .title-text{
-   margin : 2rem 0rem;
+   margin : 0rem 0rem;
 }
 
 .button-custom{
@@ -19,6 +19,7 @@
 }
 
 .title-container{
+    margin-top: 1rem;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -45,4 +46,9 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+}
+
+.img-container{
+    width: 25rem;
+    height: 25rem;
 }

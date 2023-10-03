@@ -23,7 +23,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [modalContent, setModalContent] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
 
   const navigate = useNavigate();

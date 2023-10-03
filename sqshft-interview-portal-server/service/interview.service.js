@@ -6,7 +6,6 @@ fs.initializeApp({
 const db = fs.firestore();
 
 const candidatesCollection = db.collection("candidates");
-const answersCollection = db.collection("answers");
 const questionsCollection = db.collection("questions");
 const answersKeyCollection = db.collection("answerkey");
 
@@ -16,8 +15,7 @@ const startTest = async (req, res) => {
     const candidateRef = candidatesCollection.doc(email);
     const doc = await candidateRef.get();
     if (!doc.exists) {
-      const newCandidate = candidatesCollection.doc(email);
-      const response = await newCandidate.set(req.body);
+      const response = await candidateRef.set(req.body);
       res.status(200).send({
         success: true,
         message: response,
@@ -57,14 +55,39 @@ const addQuestion = async (req, res) => {
 
 const getAllQuestions = async (req, res) => {
   try {
-    const response = [];
+    const splitArray = (arr, size) => {
+      let arrays = [];
+      while (arr.length > 0) arrays.push(arr.splice(0, size));
+      return arrays;
+    };
+
+    const shuffle = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+    let response = [];
     const snapshot = await questionsCollection.get();
     snapshot.forEach((doc) => {
       response.push(doc.data());
     });
+    response = response.sort(function (a, b) {
+      return parseInt(a.question_id) < parseInt(b.question_id)
+        ? -1
+        : parseInt(a.question_id) > parseInt(b.question_id)
+        ? 1
+        : 0;
+    });
+    response = splitArray(response, 5);
+    let holder = [];
+    response.forEach((ele) => {
+      holder = [...holder, ...shuffle(ele)];
+    });
     res.status(200).send({
       success: true,
-      data: response,
+      data: holder,
       message: "",
     });
   } catch (error) {
@@ -79,28 +102,42 @@ const getAllQuestions = async (req, res) => {
 const submitTest = async (req, res) => {
   try {
     const { answers, email = "", firstName = "", lastName = "" } = req.body;
-    let score = 0;
-    var answerkey = {};
-    const snapshot = await answersKeyCollection.get();
-    snapshot.forEach((doc) => {
-      answerkey = { ...doc.data() };
-    });
-    Object.keys(answerkey).forEach((question_id) => {
-      if (
-        answerkey[question_id].every((option) =>
-          answers[question_id]?.includes(option)
-        )
-      ) {
-        score++;
-      }
-    });
-    const newAnswer = answersCollection.doc(email);
-    const response = await newAnswer.set({ email, firstName, lastName, score });
-    res.status(201).send({
-      success: true,
-      data: response,
-      message: "Answers submitted",
-    });
+    const candidateRef = candidatesCollection.doc(email);
+    const doc = await candidateRef.get();
+    if (doc.exists) {
+      let score = 0;
+      var answerkey = {};
+      const snapshot = await answersKeyCollection.get();
+      snapshot.forEach((doc) => {
+        answerkey = { ...doc.data() };
+      });
+      Object.keys(answerkey).forEach((question_id) => {
+        if (
+          answerkey[question_id].every((option) =>
+            answers[question_id]?.includes(option)
+          )
+        ) {
+          score++;
+        }
+      });
+      const response = await candidateRef.set({
+        firstName,
+        lastName,
+        email,
+        answers,
+        score,
+      });
+      res.status(201).send({
+        success: true,
+        data: response,
+        message: "Answers submitted",
+      });
+    } else {
+      res.status(500).send({
+        success: false,
+        message: "Unable to submit answer",
+      });
+    }
   } catch (error) {
     res.status(500).send({
       success: false,
@@ -112,7 +149,7 @@ const submitTest = async (req, res) => {
 const getResults = async (req, res) => {
   try {
     const response = [];
-    const snapshot = await answersCollection.get();
+    const snapshot = await candidatesCollection.get();
     snapshot.forEach((doc) => {
       response.push(doc.data());
     });

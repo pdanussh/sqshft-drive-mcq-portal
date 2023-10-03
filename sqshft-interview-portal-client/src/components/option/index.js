@@ -1,4 +1,4 @@
-import "./index.css"
+import "./index.css";
 export const Option = ({
   name = "",
   label = "",
@@ -11,6 +11,21 @@ export const Option = ({
     values.includes(id)
       ? handleChange(values.filter((optionId) => optionId !== id))
       : handleChange([...values, id]);
+  };
+
+  const formatLabel = (code_string) => {
+    if (code_string.includes("\\n")) {
+      return code_string.split("\\n").map((question) => {
+        return (
+          <>
+            {question}
+            <br />
+          </>
+        );
+      });
+    } else {
+      return <>{code_string}</>;
+    }
   };
 
   return (
@@ -50,7 +65,7 @@ export const Option = ({
             for="flexRadioDefault1"
             onClick={() => handleChange([id])}
           >
-            {label}
+            {formatLabel(label)}
           </label>
         </div>
       )}

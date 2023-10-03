@@ -10,6 +10,7 @@ import {
   EMAIL_ID,
   F_NAME,
   L_NAME,
+  QUESTIONS,
 } from "../../utils/constants";
 import { Navbar } from "../../components/navbar";
 import "./index.css";
@@ -27,7 +28,7 @@ export const MCQScreen = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalContent, setModalContent] = useState("");
   const [testCompleted, setTestCompleted] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -39,11 +40,20 @@ export const MCQScreen = () => {
       });
       setQuestions(data);
       setLoading(false);
+      localStorage.setItem(
+        QUESTIONS,
+        JSON.stringify(data)
+      );
     };
-    fetchQuestions();
     const savedAnswers = localStorage.getItem(ANSWERS);
     if (savedAnswers) {
       setAnsers(JSON.parse(savedAnswers));
+    }
+    const savedQuestions = localStorage.getItem(QUESTIONS);
+    if (savedQuestions) {
+      setQuestions(JSON.parse(savedQuestions));
+    } else {
+      fetchQuestions();
     }
   }, []);
 
@@ -61,7 +71,7 @@ export const MCQScreen = () => {
   };
 
   const handleSubmit = async () => {
-    setLoading(true)
+    setLoading(true);
     const data = await makeAPICall({
       endpoint: API_END_POINTS.SUBMIT_TEST,
       method: API_METHODS.POST,
@@ -72,7 +82,7 @@ export const MCQScreen = () => {
         answers,
       },
     });
-    setLoading(false)
+    setLoading(false);
     if (data?.success) {
       setShowModal(true);
       setModalContent(
@@ -94,15 +104,14 @@ export const MCQScreen = () => {
     }
   };
 
+  const formatCodeString = (code_string) => {
+    return code_string.replaceAll("\\n", "\n")
+  }
   return (
     <React.Fragment>
       <Navbar />
       {loading ? (
-        <Loading
-          loading
-          background="#FFF"
-          loaderColor="#257d256b"
-        />
+        <Loading loading background="#FFF" loaderColor="#257d256b" />
       ) : (
         <>
           <div className="root-container">
@@ -113,7 +122,17 @@ export const MCQScreen = () => {
               }`}</h5>
             </div>
             <div className="title-container">
-              <h4 className="title-text">{question[activeId]?.question}</h4>
+              <h4 className="title-text">
+                {question[activeId]?.question.split(".").map((question) => {
+                  return (
+                    <>
+                      {question}
+                      <br />
+                      <br />
+                    </>
+                  );
+                })}
+              </h4>
               {question[activeId]?.hint?.length > 0 && (
                 <>
                   <span
@@ -149,13 +168,22 @@ export const MCQScreen = () => {
               <SyntaxHighlighter
                 language={question[activeId]?.code_block?.language}
                 style={dracula}
+                wrapLines={true}
               >
-                {question[activeId]?.code_block?.code_string}
+                {`${formatCodeString(question[activeId]?.code_block?.code_string)}`}
               </SyntaxHighlighter>
+            )}
+            {question[activeId]?.image_url?.length > 0 && (
+              <img
+                src={question[activeId]?.image_url}
+                alt="logo"
+                className="img-container"
+              />
             )}
             {question[activeId]?.options &&
               question[activeId]?.options.map((option) => (
                 <Option
+                  key={option.option_id}
                   isMultiSelect={question[activeId]?.is_multiple}
                   handleChange={onOptionChange}
                   label={option.value}
