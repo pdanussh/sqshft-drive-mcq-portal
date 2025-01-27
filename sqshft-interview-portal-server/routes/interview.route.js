@@ -12,6 +12,8 @@ router.get("/get-results",InterviewService.getResults)
 
 // MCQ routes V2
 router.get("/api/get-questions",InterviewService.getUserQuestions)
+router.post("/api/submit-test",InterviewService.submitUserTest)
+
 
 
 module.exports = router;

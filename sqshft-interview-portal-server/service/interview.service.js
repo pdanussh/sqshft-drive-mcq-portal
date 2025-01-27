@@ -177,6 +177,7 @@ const getResults = async (req, res) => {
   }
 };
 
+// GET USERS QUESTION
 const getUserQuestions = async (req, res) => {
   const DEFAULT_CONFIG = {
     prog: { easy: 5, medium: 3, hard: 2 },
@@ -205,6 +206,43 @@ const getUserQuestions = async (req, res) => {
   });
 };
 
+// POST USER ANSWER
+const submitUserTest = async (req, res) => {
+  try {
+    const {
+      selectedAnswers,
+      email = "",
+      firstName = "",
+      lastName = "",
+    } = req.body;
+    const candidateRef = candidatesCollection.doc(email);
+    const doc = await candidateRef.get();
+    if (doc.exists) {
+      const response = await candidateRef.set({
+        firstName,
+        lastName,
+        email,
+        answers: selectedAnswers,
+      });
+      res.status(201).send({
+        success: true,
+        data: response,
+        message: "Answers submitted",
+      });
+    } else {
+      res.status(500).send({
+        success: false,
+        message: "Unable to submit answer",
+      });
+    }
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: "Something went wrong! please contact admin",
+    });
+  }
+};
+
 module.exports = {
   getAllQuestions,
   submitTest,
@@ -212,4 +250,5 @@ module.exports = {
   startTest,
   addQuestion,
   getUserQuestions,
+  submitUserTest,
 };
