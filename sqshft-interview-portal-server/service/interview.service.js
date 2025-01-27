@@ -16,6 +16,7 @@ const shuffleAndPick = (data, count) => {
   return shuffled.slice(0, count);
 };
 
+// ROUTE: Start the test
 const startTest = async (req, res) => {
   try {
     const { email = "", firstName = "" } = req.body;
@@ -42,7 +43,7 @@ const startTest = async (req, res) => {
   }
 };
 
-// GET USERS QUESTION
+// ROUTE:  GET USERS QUESTION
 const getUserQuestions = async (req, res) => {
   const DEFAULT_CONFIG = {
     prog: { easy: 5, medium: 3, hard: 2 },
@@ -71,7 +72,7 @@ const getUserQuestions = async (req, res) => {
   });
 };
 
-// POST USER ANSWER
+// ROUTE: POST USER ANSWER
 const submitUserTest = async (req, res) => {
   try {
     const {
