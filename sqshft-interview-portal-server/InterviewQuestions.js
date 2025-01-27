@@ -10,6 +10,8 @@ const Questions = [
     options: [
       { id: "1", option: "HyperText Markup Language" },
       { id: "2", option: "HighText Machine Language" },
+      { id: "3", option: "HighTexts Machine Language" },
+      { id: "4", option: "HighTextRest Machine Language" },
     ],
     answer: [{ id: "1" }],
     isMultiSelect: false,

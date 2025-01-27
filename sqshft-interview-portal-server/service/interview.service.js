@@ -1,5 +1,6 @@
 const fs = require("firebase-admin");
 const serviceAccount = require("../service-drive.json");
+require("dotenv").config();
 
 const Questions = require("../InterviewQuestions");
 
@@ -11,6 +12,11 @@ const db = fs.firestore();
 const candidatesCollection = db.collection("candidates");
 const questionsCollection = db.collection("questions");
 const answersKeyCollection = db.collection("answerkey");
+
+const shuffleAndPick = (data, count) => {
+  const shuffled = data.sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+};
 
 const startTest = async (req, res) => {
   try {
@@ -172,17 +178,26 @@ const getResults = async (req, res) => {
 };
 
 const getUserQuestions = async (req, res) => {
-  // Create a copy of the Questions data with the answer field removed
-  const questionsWithoutAnswers = Questions.map((question) => {
-    const { answer, ...questionWithoutAnswer } = question;
-    return questionWithoutAnswer;
-  });
-
-  const CONFIG = {
+  const DEFAULT_CONFIG = {
     prog: { easy: 5, medium: 3, hard: 2 },
     logical: { easy: 2, medium: 1, hard: 2 },
     quants: { easy: 2, medium: 1, hard: 2 },
   };
+  const CONFIG = JSON.parse(process.env.CONFIG) || DEFAULT_CONFIG;
+
+  const groupedQuestions = Object.entries(CONFIG).flatMap(([type, levels]) => {
+    return Object.entries(levels).flatMap(([level, count]) => {
+      const filteredQuestions = Questions.filter(
+        (q) => q.type === type && q.level === level
+      );
+      return shuffleAndPick(filteredQuestions, count);
+    });
+  });
+
+  const questionsWithoutAnswers = [...groupedQuestions].map((question) => {
+    const { answer, ...questionWithoutAnswer } = question; // remove answers to frontend.
+    return questionWithoutAnswer;
+  });
 
   res.status(200).send({
     success: true,
