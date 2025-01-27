@@ -10,8 +10,6 @@ fs.initializeApp({
 const db = fs.firestore();
 
 const candidatesCollection = db.collection("candidates");
-const questionsCollection = db.collection("questions");
-const answersKeyCollection = db.collection("answerkey");
 
 const shuffleAndPick = (data, count) => {
   const shuffled = data.sort(() => Math.random() - 0.5);
@@ -40,139 +38,6 @@ const startTest = async (req, res) => {
       success: false,
       message: "Unable to start test. Please contact admin.",
       error,
-    });
-  }
-};
-
-const addQuestion = async (req, res) => {
-  try {
-    const { question_id = "" } = req.body;
-    const newQuestion = questionsCollection.doc(question_id);
-    const response = await newQuestion.set(req.body);
-    res.status(200).send({
-      success: true,
-      message: response,
-    });
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: "Unable to start test. Please contact admin.",
-      error,
-    });
-  }
-};
-
-const getAllQuestions = async (req, res) => {
-  try {
-    const splitArray = (arr, size) => {
-      let arrays = [];
-      while (arr.length > 0) arrays.push(arr.splice(0, size));
-      return arrays;
-    };
-
-    const shuffle = (array) => {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    };
-    let response = [];
-    const snapshot = await questionsCollection.get();
-    snapshot.forEach((doc) => {
-      response.push(doc.data());
-    });
-    response = response.sort(function (a, b) {
-      return parseInt(a.question_id) < parseInt(b.question_id)
-        ? -1
-        : parseInt(a.question_id) > parseInt(b.question_id)
-        ? 1
-        : 0;
-    });
-    response = splitArray(response, 5);
-    let holder = [];
-    response.forEach((ele) => {
-      holder = [...holder, ...shuffle(ele)];
-    });
-    res.status(200).send({
-      success: true,
-      data: holder,
-      message: "",
-    });
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      data: [],
-      message: "Unable to fetch questions",
-    });
-  }
-};
-
-const submitTest = async (req, res) => {
-  try {
-    const { answers, email = "", firstName = "", lastName = "" } = req.body;
-    const candidateRef = candidatesCollection.doc(email);
-    const doc = await candidateRef.get();
-    if (doc.exists) {
-      let score = 0;
-      var answerkey = {};
-      const snapshot = await answersKeyCollection.get();
-      snapshot.forEach((doc) => {
-        answerkey = { ...doc.data() };
-      });
-      Object.keys(answerkey).forEach((question_id) => {
-        if (
-          answerkey[question_id].every((option) =>
-            answers[question_id]?.includes(option)
-          )
-        ) {
-          score++;
-        }
-      });
-      const response = await candidateRef.set({
-        firstName,
-        lastName,
-        email,
-        answers,
-        score,
-      });
-      res.status(201).send({
-        success: true,
-        data: response,
-        message: "Answers submitted",
-      });
-    } else {
-      res.status(500).send({
-        success: false,
-        message: "Unable to submit answer",
-      });
-    }
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      message: "Unable to submit answer",
-    });
-  }
-};
-
-const getResults = async (req, res) => {
-  try {
-    const response = [];
-    const snapshot = await candidatesCollection.get();
-    snapshot.forEach((doc) => {
-      response.push(doc.data());
-    });
-    res.status(200).send({
-      success: false,
-      data: response.sort(function (a, b) {
-        return a.score > b.score ? -1 : a.score < b.score ? 1 : 0;
-      }),
-    });
-  } catch (error) {
-    res.status(500).send({
-      success: false,
-      data: [],
-      message: "Unable to retrieve results",
     });
   }
 };
@@ -210,7 +75,7 @@ const getUserQuestions = async (req, res) => {
 const submitUserTest = async (req, res) => {
   try {
     const {
-      selectedAnswers,
+      selectedAnswers = {},
       email = "",
       firstName = "",
       lastName = "",
@@ -243,12 +108,108 @@ const submitUserTest = async (req, res) => {
   }
 };
 
+// ROUTE: GET REPORT FOR ALL USERS
+const getAllUserReports = async (req, res) => {
+  try {
+    const snapshot = await candidatesCollection.get();
+    if (snapshot.empty) {
+      return res.status(404).send({
+        success: false,
+        message: "No users found.",
+      });
+    }
+
+    const report = [];
+
+    snapshot.forEach((doc) => {
+      const userData = doc.data();
+      const { firstName, lastName, email, answers = {} } = userData;
+
+      // Configuration for total questions per section
+      const DEFAULT_CONFIG = {
+        prog: 10, // Total number of questions in 'prog'
+        logical: 5, // Total number of questions in 'logical'
+        quants: 5, // Total number of questions in 'quants'
+      };
+
+      const sectionScores = {
+        prog: 0,
+        logical: 0,
+        quants: 0,
+      };
+
+      const sectionAttempted = {
+        prog: 0,
+        logical: 0,
+        quants: 0,
+      };
+
+      // Iterate through the answers object
+      Object.entries(answers).forEach(([questionId, selectedOptions]) => {
+        const question = Questions.find((q) => q.id === parseInt(questionId)); // Find the question by ID
+
+        if (question) {
+          sectionAttempted[question.type] += 1; // Increment attempted questions count for the section
+
+          // Normalize the question's correct answer to an array of IDs
+          const correctAnswers = question.answer.map((a) => a.id);
+
+          // Check if the user's selected options match the correct answers
+          const isCorrect =
+            correctAnswers.length === selectedOptions.length &&
+            correctAnswers.every((answerId) =>
+              selectedOptions.includes(answerId)
+            );
+
+          if (isCorrect) {
+            sectionScores[question.type] += 1; // Increment score for the correct section
+          }
+        } else {
+          console.log(`Question not found for ID: ${questionId}`);
+        }
+      });
+
+      // Construct scores object with attempted count
+      const scores = Object.entries(sectionScores).reduce(
+        (acc, [section, score]) => {
+          acc[section] = {
+            scorePercentage: ((score / DEFAULT_CONFIG[section]) * 100).toFixed(
+              2
+            ),
+            attempted: sectionAttempted[section], // Add the attempted count
+          };
+          return acc;
+        },
+        {}
+      );
+
+      // Add user report
+      report.push({
+        firstName,
+        lastName,
+        email,
+        scores,
+      });
+    });
+
+    // Send the report
+    res.status(200).send({
+      success: true,
+      data: report,
+    });
+  } catch (error) {
+    console.error("Error generating report:", error);
+    res.status(500).send({
+      success: false,
+      message: "Unable to generate report. Please contact admin.",
+      error,
+    });
+  }
+};
+
 module.exports = {
-  getAllQuestions,
-  submitTest,
-  getResults,
   startTest,
-  addQuestion,
+  getAllUserReports,
   getUserQuestions,
   submitUserTest,
 };
