@@ -10,4 +10,8 @@ router.get("/get-questions",InterviewService.getAllQuestions)
 
 router.get("/get-results",InterviewService.getResults)
 
+// MCQ routes V2
+router.get("/api/get-questions",InterviewService.getUserQuestions)
+
+
 module.exports = router;

@@ -1,5 +1,8 @@
 const fs = require("firebase-admin");
-const serviceAccount = require("../cit-drive-5d265664c3f7.json");
+const serviceAccount = require("../service-drive.json");
+
+const Questions = require("../InterviewQuestions");
+
 fs.initializeApp({
   credential: fs.credential.cert(serviceAccount),
 });
@@ -168,10 +171,30 @@ const getResults = async (req, res) => {
   }
 };
 
+const getUserQuestions = async (req, res) => {
+  // Create a copy of the Questions data with the answer field removed
+  const questionsWithoutAnswers = Questions.map((question) => {
+    const { answer, ...questionWithoutAnswer } = question;
+    return questionWithoutAnswer;
+  });
+
+  const CONFIG = {
+    prog: { easy: 5, medium: 3, hard: 2 },
+    logical: { easy: 2, medium: 1, hard: 2 },
+    quants: { easy: 2, medium: 1, hard: 2 },
+  };
+
+  res.status(200).send({
+    success: true,
+    data: questionsWithoutAnswers,
+  });
+};
+
 module.exports = {
   getAllQuestions,
   submitTest,
   getResults,
   startTest,
   addQuestion,
+  getUserQuestions,
 };
