@@ -29,13 +29,14 @@ export const ROUTES_MAP = {
   ANY: "*",
 };
 
-export const API_URL = process.env.REACT_APP_API_URL;
+export const API_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:8080";
 
 export const API_END_POINTS = {
   START_TEST: "",
-  SUBMIT_TEST: "/submit-test",
-  GET_QUESTIONS: "/get-questions",
-  GET_RESULTS: "/get-results",
+  SUBMIT_TEST: "/api/submit-test",
+  GET_QUESTIONS: "/api/get-questions",
+  GET_RESULTS: "/api/get-results",
 };
 
 export const API_METHODS = {

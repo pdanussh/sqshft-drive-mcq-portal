@@ -6,23 +6,25 @@ export default function Table({
   fieldKeys = [],
 }) {
   const getData = (datum) => {
-    return fieldKeys.map((fieldkey) => <td>{datum[fieldkey]}</td>);
+    return fieldKeys.map((fieldkey, index) => (
+      <td key={index}>{datum[fieldkey]}</td>
+    ));
   };
 
   return (
     <table className={`table ${className}`}>
       <thead>
         <tr>
-          {headers.map((header) => (
-            <th key={header} scope="col">
+          {headers.map((header, index) => (
+            <th key={index} scope="col">
               {header}
             </th>
           ))}
         </tr>
       </thead>
       <tbody>
-        {data.map((datum) => (
-          <tr>{getData(datum)}</tr>
+        {data.map((datum, index) => (
+          <tr key={index}>{getData(datum)}</tr>
         ))}
       </tbody>
     </table>
